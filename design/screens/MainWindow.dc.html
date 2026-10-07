@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>메인 창</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shared.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  body{ margin:0; }
+  .inspector-section{ display:flex; flex-direction:column; gap:10px; padding-bottom:16px; border-bottom:1px solid var(--border); }
+  .inspector-section.last{ border-bottom:none; }
+  .filter-btn{ display:flex; flex-direction:column; gap:5px; align-items:stretch; padding:4px; border-radius:9px; border:2px solid transparent; background:transparent; cursor:pointer; font-family:inherit; font-size:11px; color:var(--text-secondary); }
+  .filter-btn.active{ border-color:var(--accent); color:var(--accent); font-weight:600; }
+  .filter-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .toggle-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .toggle-row:last-child{ border-bottom:none; }
+  .toggle-row .name{ flex:1; font-size:13px; }
+  .char-btn{ display:flex; flex-direction:column; align-items:center; gap:6px; background:transparent; border:none; cursor:pointer; font-family:inherit; font-size:12px; color:var(--text-secondary); padding:0; }
+  .char-btn .face{ width:56px; height:56px; border-radius:50%; border:2px solid transparent; background:var(--bg-sunken); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .char-btn.active{ color:var(--accent); font-weight:600; }
+  .char-btn.active .face{ border-color:var(--accent); }
+  .char-btn:focus-visible .face{ outline:2px solid var(--accent); outline-offset:2px; }
+  .reaction-pop{ position:absolute; font-weight:800; font-family:-apple-system, system-ui, sans-serif; }
+</style>
+</helmet>
+<div class="theme-root {{themeCls}}" style="width:1180px; height:720px; padding:30px; background:var(--bg-sunken);">
+<div class="mac-window">
+
+  <div class="titlebar">
+    <div class="traffic"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+    <span class="titlebar-title">CamZoom</span>
+  </div>
+
+  <div style="flex:1; display:flex; min-height:0;">
+
+    <nav style="width:150px; flex:0 0 150px; border-right:1px solid var(--border); padding:14px 8px; display:flex; flex-direction:column; gap:2px;" aria-label="설정 분류">
+      <button class="sidebar-item {{adjustCls}}" type="button" onClick="{{pickAdjust}}">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2.1" fill="currentColor" stroke="none"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2.1" fill="currentColor" stroke="none"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="11" cy="17" r="2.1" fill="currentColor" stroke="none"/></svg>
+        조절
+      </button>
+      <button class="sidebar-item {{decorateCls}}" type="button" onClick="{{pickDecorate}}">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3 L14 10 L21 12 L14 14 L12 21 L10 14 L3 12 L10 10 Z"/></svg>
+        꾸미기
+      </button>
+      <button class="sidebar-item {{effectsCls}}" type="button" onClick="{{pickEffects}}">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M13 2 L4 14 H11 L10 22 L20 9 H13 Z"/></svg>
+        효과
+      </button>
+      <button class="sidebar-item {{characterCls}}" type="button" onClick="{{pickCharacter}}">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/><path d="M8.5 14.5 Q12 17.5 15.5 14.5" stroke-linecap="round"/></svg>
+        캐릭터
+      </button>
+    </nav>
+
+    <section style="flex:1; min-width:0; display:flex; flex-direction:column; background:var(--bg-stage);" aria-label="미리보기">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid var(--border); background:var(--bg-window);">
+        <span class="panel-label">상대방에게 보이는 화면</span>
+        <label style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-secondary); cursor:pointer;">
+          효과 끄고 비교
+          <span class="switch">
+            <input type="checkbox" checked="{{compare}}" onChange="{{toggleCompare}}" aria-label="효과 끄고 비교">
+            <span class="track"></span>
+            <span class="thumb"></span>
+          </span>
+        </label>
+      </div>
+
+      <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:20px; min-height:0;">
+        <div style="{{frameStyle}}">
+          <div style="position:relative; overflow:hidden; border-radius:6px; width:{{viewW}}px; height:{{viewH}}px;">
+
+            <div style="position:absolute; inset:0; transform:scale({{zoom}}); transform-origin:50% 55%; filter:{{filterCss}}; transition:transform .2s;">
+              <div class="camera-feed" style="position:absolute; inset:-12px; filter:{{blurCss}};"></div>
+
+              <sc-if value="{{showSilhouette}}" hint-placeholder-val="{{true}}">
+                <div class="camera-feed" style="position:absolute; inset:0; background:transparent;">
+                  <div class="silhouette" style="width:auto; height:64%; top:62%; transform:translate(-50%,-50%) {{distortCss}};"></div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{showChar1}}" hint-placeholder-val="{{false}}">
+                <svg viewBox="0 0 100 100" style="position:absolute; left:50%; top:60%; height:66%; transform:translate(-50%,-50%) {{distortCss}};" aria-hidden="true">
+                  <ellipse cx="50" cy="54" rx="40" ry="38" fill="#FFB547"/>
+                  <ellipse cx="36" cy="50" rx="5" ry="{{eyeRy}}" fill="#3A2A12"/>
+                  <ellipse cx="64" cy="50" rx="5" ry="{{eyeRy}}" fill="#3A2A12"/>
+                  <ellipse cx="26" cy="62" rx="6" ry="3.5" fill="#FF8A66" opacity=".6"/>
+                  <ellipse cx="74" cy="62" rx="6" ry="3.5" fill="#FF8A66" opacity=".6"/>
+                  <path d="M42 66 Q50 74 58 66" stroke="#3A2A12" stroke-width="3" fill="none" stroke-linecap="round"/>
+                </svg>
+              </sc-if>
+              <sc-if value="{{showChar2}}" hint-placeholder-val="{{false}}">
+                <svg viewBox="0 0 100 100" style="position:absolute; left:50%; top:60%; height:66%; transform:translate(-50%,-50%) {{distortCss}};" aria-hidden="true">
+                  <path d="M18 34 L24 8 L42 24 Z" fill="#8E9BFF"/>
+                  <path d="M82 34 L76 8 L58 24 Z" fill="#8E9BFF"/>
+                  <circle cx="50" cy="54" r="38" fill="#8E9BFF"/>
+                  <ellipse cx="37" cy="50" rx="4.5" ry="{{eyeRy}}" fill="#1E1E3A"/>
+                  <ellipse cx="63" cy="50" rx="4.5" ry="{{eyeRy}}" fill="#1E1E3A"/>
+                  <path d="M47 60 L53 60 L50 64 Z" fill="#FF8AA8"/>
+                  <path d="M50 64 Q44 70 40 66 M50 64 Q56 70 60 66" stroke="#1E1E3A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                </svg>
+              </sc-if>
+              <sc-if value="{{showChar3}}" hint-placeholder-val="{{false}}">
+                <svg viewBox="0 0 100 100" style="position:absolute; left:50%; top:60%; height:66%; transform:translate(-50%,-50%) {{distortCss}};" aria-hidden="true">
+                  <circle cx="20" cy="22" r="12" fill="#B9875A"/>
+                  <circle cx="80" cy="22" r="12" fill="#B9875A"/>
+                  <circle cx="50" cy="54" r="38" fill="#B9875A"/>
+                  <ellipse cx="50" cy="66" rx="16" ry="12" fill="#E6C8A6"/>
+                  <ellipse cx="36" cy="48" rx="4.5" ry="{{eyeRy}}" fill="#2B1A0C"/>
+                  <ellipse cx="64" cy="48" rx="4.5" ry="{{eyeRy}}" fill="#2B1A0C"/>
+                  <ellipse cx="50" cy="61" rx="5" ry="3.5" fill="#2B1A0C"/>
+                  <path d="M50 64 L50 70 M44 72 Q50 76 56 72" stroke="#2B1A0C" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                </svg>
+              </sc-if>
+
+              <sc-if value="{{showHat}}" hint-placeholder-val="{{false}}">
+                <svg viewBox="0 0 60 60" style="position:absolute; left:50%; top:9%; height:24%; transform:translateX(-50%) rotate(-8deg);" aria-hidden="true">
+                  <path d="M30 4 L52 54 H8 Z" fill="#FF8A66"/>
+                  <path d="M22 22 L38 22 M17 34 L43 34 M12 46 L48 46" stroke="#FFD60A" stroke-width="4"/>
+                  <circle cx="30" cy="5" r="5" fill="#FFD60A"/>
+                </svg>
+              </sc-if>
+              <sc-if value="{{showGlasses}}" hint-placeholder-val="{{false}}">
+                <svg viewBox="0 0 100 30" style="position:absolute; left:50%; top:49%; height:11%; transform:translateX(-50%);" aria-hidden="true">
+                  <circle cx="28" cy="15" r="13" fill="#111" stroke="#FFD60A" stroke-width="3"/>
+                  <circle cx="72" cy="15" r="13" fill="#111" stroke="#FFD60A" stroke-width="3"/>
+                  <path d="M41 13 Q50 7 59 13" stroke="#FFD60A" stroke-width="3" fill="none"/>
+                </svg>
+              </sc-if>
+              <sc-if value="{{showMustache}}" hint-placeholder-val="{{false}}">
+                <svg viewBox="0 0 100 30" style="position:absolute; left:50%; top:66%; height:9%; transform:translateX(-50%);" aria-hidden="true">
+                  <path d="M50 10 C40 0 20 0 8 18 C22 14 34 22 50 14 C66 22 78 14 92 18 C80 0 60 0 50 10 Z" fill="#2B1A0C"/>
+                </svg>
+              </sc-if>
+            </div>
+
+            <sc-if value="{{showReaction}}" hint-placeholder-val="{{false}}">
+              <span class="reaction-pop" style="left:8%; top:10%; font-size:44px; color:#FFD60A; transform:rotate(-14deg);">?!</span>
+              <span class="reaction-pop" style="right:9%; top:16%; font-size:30px; color:#FF8A66; transform:rotate(12deg);">ㅋㅋㅋ</span>
+              <svg viewBox="0 0 40 40" style="position:absolute; right:14%; bottom:14%; width:44px;" aria-hidden="true"><path d="M20 2 L24 15 L38 16 L27 24 L31 38 L20 30 L9 38 L13 24 L2 16 L16 15 Z" fill="#FFD60A"/></svg>
+              <svg viewBox="0 0 40 40" style="position:absolute; left:14%; bottom:20%; width:30px;" aria-hidden="true"><path d="M20 2 L24 15 L38 16 L27 24 L31 38 L20 30 L9 38 L13 24 L2 16 L16 15 Z" fill="#8E9BFF"/></svg>
+            </sc-if>
+
+            <sc-if value="{{showFreeze}}" hint-placeholder-val="{{false}}">
+              <span style="position:absolute; left:10px; top:10px; display:flex; align-items:center; gap:6px; padding:5px 10px; border-radius:999px; background:rgba(0,0,0,.65); color:#fff; font-size:11px; font-weight:600;">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="#fff" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                화면 정지됨
+              </span>
+            </sc-if>
+
+            <sc-if value="{{compare}}" hint-placeholder-val="{{false}}">
+              <span style="position:absolute; right:10px; bottom:10px; padding:5px 10px; border-radius:999px; background:rgba(0,0,0,.65); color:#fff; font-size:11px; font-weight:600;">효과 꺼짐 (비교 중)</span>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:10px 18px; border-top:1px solid var(--border); background:var(--bg-window);">
+        <span class="hint-text">내 화상 앱에서는 좌우가 반전돼 보일 수 있지만, 상대방에게는 정상으로 보여요.</span>
+      </div>
+    </section>
+
+    <aside style="width:300px; flex:0 0 300px; border-left:1px solid var(--border); background:var(--bg-panel); padding:18px; display:flex; flex-direction:column; gap:16px; overflow:auto;" aria-label="세부 설정">
+
+      <sc-if value="{{showAdjust}}" hint-placeholder-val="{{true}}">
+        <div class="inspector-section">
+          <span class="panel-label">카메라 원본</span>
+          <div class="camera-feed" style="width:100%; aspect-ratio:16/9; border-radius:6px;">
+            <div class="silhouette"></div>
+            <div style="position:absolute; left:{{boxLeft}}%; top:{{boxTop}}%; width:{{boxW}}%; height:{{boxH}}%; border:2px solid var(--select); border-radius:3px; box-shadow:0 0 0 400px rgba(0,0,0,0.45);"></div>
+          </div>
+          <span class="hint-text">노란 영역을 드래그해서 확대할 위치를 옮겨요</span>
+        </div>
+        <div class="inspector-section">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="panel-label">확대</span>
+            <span style="font-size:12px; color:var(--text-secondary); font-variant-numeric:tabular-nums;">{{zoomLabel}}</span>
+          </div>
+          <input type="range" min="1" max="4" step="0.1" value="{{zoom}}" onChange="{{setZoom}}" aria-label="확대 배율">
+        </div>
+        <div class="inspector-section">
+          <span class="panel-label">비율</span>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <sc-for list="{{aspects}}" as="a" hint-placeholder-count="4">
+              <button class="chip {{a.cls}}" type="button" onClick="{{a.pick}}">{{a.label}}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn" type="button" style="flex:1;" onClick="{{resetAdjust}}">초기화</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{showDecorate}}" hint-placeholder-val="{{false}}">
+        <div class="inspector-section">
+          <span class="panel-label">필터</span>
+          <div style="display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px;">
+            <sc-for list="{{filters}}" as="f" hint-placeholder-count="6">
+              <button class="filter-btn {{f.cls}}" type="button" onClick="{{f.pick}}">
+                <span class="camera-feed" style="display:block; width:100%; aspect-ratio:1/1; border-radius:6px; filter:{{f.css}};"><span class="silhouette"></span></span>
+                {{f.label}}
+              </button>
+            </sc-for>
+          </div>
+        </div>
+        <div class="inspector-section">
+          <span class="panel-label">프레임</span>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <sc-for list="{{frames}}" as="fr" hint-placeholder-count="4">
+              <button class="chip {{fr.cls}}" type="button" onClick="{{fr.pick}}">{{fr.label}}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div style="flex:1;">
+            <div style="font-size:13px;">배경 흐림</div>
+            <div class="hint-text">사람만 남기고 배경을 흐리게</div>
+          </div>
+          <span class="switch">
+            <input type="checkbox" checked="{{bgBlur}}" onChange="{{toggleBlur}}" aria-label="배경 흐림">
+            <span class="track"></span><span class="thumb"></span>
+          </span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{showEffects}}" hint-placeholder-val="{{false}}">
+        <div class="inspector-section">
+          <span class="panel-label">얼굴 따라다니는 스티커</span>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <sc-for list="{{stickers}}" as="s" hint-placeholder-count="4">
+              <button class="chip {{s.cls}}" type="button" onClick="{{s.pick}}">{{s.label}}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column;">
+          <div class="toggle-row">
+            <span class="name">얼굴 왜곡</span>
+            <span class="switch"><input type="checkbox" checked="{{distort}}" onChange="{{toggleDistort}}" aria-label="얼굴 왜곡"><span class="track"></span><span class="thumb"></span></span>
+          </div>
+          <div class="toggle-row">
+            <span class="name">리액션</span>
+            <span class="switch"><input type="checkbox" checked="{{reaction}}" onChange="{{toggleReaction}}" aria-label="리액션"><span class="track"></span><span class="thumb"></span></span>
+          </div>
+          <div class="toggle-row">
+            <span class="name">화면 얼리기</span>
+            <span class="switch"><input type="checkbox" checked="{{freeze}}" onChange="{{toggleFreeze}}" aria-label="화면 얼리기"><span class="track"></span><span class="thumb"></span></span>
+          </div>
+        </div>
+        <button class="btn primary" type="button" onClick="{{dramaZoom}}">드라마틱 줌 실행 (⌘⇧Z)</button>
+      </sc-if>
+
+      <sc-if value="{{showCharacter}}" hint-placeholder-val="{{false}}">
+        <div class="inspector-section">
+          <span class="panel-label">캐릭터</span>
+          <span class="hint-text">표정과 고개 움직임을 캐릭터가 따라 해요</span>
+          <div style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; margin-top:4px;">
+            <button class="char-btn {{charNoneCls}}" type="button" onClick="{{pickCharNone}}">
+              <span class="face"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><line x1="6.5" y1="17.5" x2="17.5" y2="6.5"/></svg></span>
+              없음
+            </button>
+            <button class="char-btn {{char1Cls}}" type="button" onClick="{{pickChar1}}">
+              <span class="face" style="background:#FFB547;"><svg viewBox="0 0 100 100" width="40" height="40"><ellipse cx="36" cy="46" rx="6" ry="8" fill="#3A2A12"/><ellipse cx="64" cy="46" rx="6" ry="8" fill="#3A2A12"/><path d="M40 64 Q50 74 60 64" stroke="#3A2A12" stroke-width="5" fill="none" stroke-linecap="round"/></svg></span>
+              말랑이
+            </button>
+            <button class="char-btn {{char2Cls}}" type="button" onClick="{{pickChar2}}">
+              <span class="face" style="background:#8E9BFF;"><svg viewBox="0 0 100 100" width="40" height="40"><ellipse cx="36" cy="46" rx="6" ry="8" fill="#1E1E3A"/><ellipse cx="64" cy="46" rx="6" ry="8" fill="#1E1E3A"/><path d="M50 62 Q42 70 38 64 M50 62 Q58 70 62 64" stroke="#1E1E3A" stroke-width="4" fill="none" stroke-linecap="round"/></svg></span>
+              냥이
+            </button>
+            <button class="char-btn {{char3Cls}}" type="button" onClick="{{pickChar3}}">
+              <span class="face" style="background:#B9875A;"><svg viewBox="0 0 100 100" width="40" height="40"><ellipse cx="36" cy="44" rx="6" ry="8" fill="#2B1A0C"/><ellipse cx="64" cy="44" rx="6" ry="8" fill="#2B1A0C"/><ellipse cx="50" cy="62" rx="16" ry="12" fill="#E6C8A6"/><ellipse cx="50" cy="58" rx="6" ry="4" fill="#2B1A0C"/></svg></span>
+              곰돌
+            </button>
+          </div>
+        </div>
+        <div class="inspector-section">
+          <span class="panel-label">표정 테스트</span>
+          <div style="display:flex; gap:6px;">
+            <button class="chip {{eyesOpenCls}}" type="button" onClick="{{openEyes}}">눈 뜸</button>
+            <button class="chip {{eyesClosedCls}}" type="button" onClick="{{closeEyes}}">눈 감음</button>
+          </div>
+          <span class="hint-text">실제 앱에서는 카메라로 표정을 읽어 자동으로 바뀌어요</span>
+        </div>
+        <div class="inspector-section last">
+          <button class="btn" type="button">무표정 기준 다시 잡기</button>
+          <button class="btn" type="button">VRM 캐릭터 불러오기…</button>
+        </div>
+      </sc-if>
+
+    </aside>
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1180,"height":720}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      tab: "adjust", zoom: 1.6, aspect: "square",
+      filter: "none", frame: "none", bgBlur: false,
+      sticker: "hat", distort: false, reaction: false, freeze: false,
+      character: "none", eyesClosed: false, compare: false
+    };
+  }
+  set(patch) { return () => this.setState(patch); }
+  toggle(key) { return () => this.setState({ [key]: !this.state[key] }); }
+  renderVals() {
+    const s = this.state;
+    const theme = this.props.theme ?? "light";
+    const ratios = { original: 16 / 9, square: 1, fourThree: 4 / 3, sixteenNine: 16 / 9 };
+    const r = ratios[s.aspect] ?? 1;
+    const maxW = 560, maxH = 380;
+    const viewW = Math.round(Math.min(maxW, maxH * r));
+    const viewH = Math.round(viewW / r);
+
+    const filterMap = {
+      none: "none", mono: "grayscale(1)", retro: "sepia(.5) saturate(1.5) hue-rotate(-15deg)",
+      toon: "contrast(1.6) saturate(1.8)", film: "contrast(1.1) brightness(1.08) sepia(.25)", sepia: "sepia(1)"
+    };
+    const filterLabels = { none: "원본", mono: "흑백", retro: "레트로", toon: "만화풍", film: "필름", sepia: "세피아" };
+    const frameStyles = {
+      none: "padding:0;",
+      polaroid: "padding:12px 12px 46px; background:#FFFFFF; border-radius:4px; box-shadow:0 6px 18px rgba(0,0,0,.25);",
+      tv: "padding:18px; background:#26262A; border-radius:24px; box-shadow:0 6px 18px rgba(0,0,0,.35);",
+      wood: "padding:14px; background:#8A6A45; border:3px solid #5C4128; border-radius:4px;"
+    };
+    const frameLabels = { none: "없음", polaroid: "폴라로이드", tv: "TV", wood: "액자" };
+    const stickerLabels = { none: "없음", hat: "고깔모자", glasses: "선글라스", mustache: "콧수염" };
+
+    const c = s.compare;
+    const box = (() => {
+      const srcR = 16 / 9;
+      let bw = 1, bh = 1;
+      if (r <= srcR) { bw = r / srcR; } else { bh = srcR / r; }
+      const w = (bw / s.zoom) * 100, h = (bh / s.zoom) * 100;
+      const left = Math.min(Math.max(50 - w / 2, 0), 100 - w);
+      const top = Math.min(Math.max(48 - h / 2, 0), 100 - h);
+      return { w: w.toFixed(1), h: h.toFixed(1), left: left.toFixed(1), top: top.toFixed(1) };
+    })();
+
+    const tab = s.tab;
+    const cls = (cond) => (cond ? "active" : "");
+    return {
+      themeCls: "theme-" + theme,
+      adjustCls: cls(tab === "adjust"), decorateCls: cls(tab === "decorate"),
+      effectsCls: cls(tab === "effects"), characterCls: cls(tab === "character"),
+      pickAdjust: this.set({ tab: "adjust" }), pickDecorate: this.set({ tab: "decorate" }),
+      pickEffects: this.set({ tab: "effects" }), pickCharacter: this.set({ tab: "character" }),
+      showAdjust: tab === "adjust", showDecorate: tab === "decorate",
+      showEffects: tab === "effects", showCharacter: tab === "character",
+
+      viewW, viewH,
+      zoom: s.zoom,
+      zoomLabel: s.zoom.toFixed(1) + "배",
+      setZoom: (e) => this.setState({ zoom: parseFloat(e.target.value) }),
+      filterCss: c ? "none" : filterMap[s.filter],
+      blurCss: !c && s.bgBlur ? "blur(8px)" : "none",
+      frameStyle: c ? frameStyles.none : frameStyles[s.frame],
+      distortCss: !c && s.distort ? "scale(1.35, 0.82)" : "",
+
+      showSilhouette: c || s.character === "none",
+      showChar1: !c && s.character === "c1",
+      showChar2: !c && s.character === "c2",
+      showChar3: !c && s.character === "c3",
+      eyeRy: s.eyesClosed ? 1 : 6,
+      showHat: !c && s.sticker === "hat",
+      showGlasses: !c && s.sticker === "glasses",
+      showMustache: !c && s.sticker === "mustache",
+      showReaction: !c && s.reaction,
+      showFreeze: !c && s.freeze,
+      compare: c,
+      toggleCompare: this.toggle("compare"),
+
+      boxW: box.w, boxH: box.h, boxLeft: box.left, boxTop: box.top,
+      aspects: [["original", "원본"], ["square", "정사각형"], ["fourThree", "4:3"], ["sixteenNine", "16:9"]].map(([k, label]) => ({
+        label, cls: cls(s.aspect === k), pick: this.set({ aspect: k })
+      })),
+      resetAdjust: this.set({ zoom: 1, aspect: "original" }),
+
+      filters: Object.keys(filterMap).map((k) => ({
+        label: filterLabels[k], css: filterMap[k], cls: cls(s.filter === k), pick: this.set({ filter: k })
+      })),
+      frames: Object.keys(frameStyles).map((k) => ({
+        label: frameLabels[k], cls: cls(s.frame === k), pick: this.set({ frame: k })
+      })),
+      bgBlur: s.bgBlur, toggleBlur: this.toggle("bgBlur"),
+
+      stickers: Object.keys(stickerLabels).map((k) => ({
+        label: stickerLabels[k], cls: cls(s.sticker === k), pick: this.set({ sticker: k })
+      })),
+      distort: s.distort, toggleDistort: this.toggle("distort"),
+      reaction: s.reaction, toggleReaction: this.toggle("reaction"),
+      freeze: s.freeze, toggleFreeze: this.toggle("freeze"),
+      dramaZoom: () => this.setState({ zoom: 3.5, reaction: true }),
+
+      charNoneCls: cls(s.character === "none"), char1Cls: cls(s.character === "c1"),
+      char2Cls: cls(s.character === "c2"), char3Cls: cls(s.character === "c3"),
+      pickCharNone: this.set({ character: "none" }), pickChar1: this.set({ character: "c1" }),
+      pickChar2: this.set({ character: "c2" }), pickChar3: this.set({ character: "c3" }),
+      eyesOpenCls: cls(!s.eyesClosed), eyesClosedCls: cls(s.eyesClosed),
+      openEyes: this.set({ eyesClosed: false }), closeEyes: this.set({ eyesClosed: true })
+    };
+  }
+}
+</script>
+</body>
+</html>

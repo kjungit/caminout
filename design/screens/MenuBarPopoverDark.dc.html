@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>메뉴바 팝오버 (다크)</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shared.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  body{ margin:0; }
+</style>
+</helmet>
+<div style="width:320px; height:420px;">
+  <dc-import name="MenuBarPopover" theme="dark" hint-size="320px,420px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":320,"height":420}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

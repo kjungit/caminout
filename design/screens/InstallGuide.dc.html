@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>설치 안내</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shared.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  body{ margin:0; }
+  .icon-plate{ width:88px; height:88px; border-radius:20px; background:var(--accent-soft); display:flex; align-items:center; justify-content:center; }
+</style>
+</helmet>
+<div class="theme-root {{themeCls}}" style="width:680px; height:560px; padding:30px; background:var(--bg-sunken);">
+<div class="mac-window">
+
+  <div class="titlebar">
+    <div class="traffic"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+    <span class="titlebar-title">설치 안내</span>
+  </div>
+
+  <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px; padding:30px;">
+
+    <div class="step-dots">
+      <span class="dot-step {{dot1}}"></span>
+      <span class="dot-step {{dot2}}"></span>
+      <span class="dot-step {{dot3}}"></span>
+      <span class="dot-step {{dot4}}"></span>
+      <span class="dot-step {{dot5}}"></span>
+    </div>
+
+    <div class="icon-plate">
+      <sc-if value="{{showCameraIcon}}" hint-placeholder-val="{{true}}">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="var(--accent)" stroke-width="1.6"><rect x="3" y="7" width="13" height="10" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg>
+      </sc-if>
+      <sc-if value="{{showExtensionIcon}}" hint-placeholder-val="{{false}}">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="var(--accent)" stroke-width="1.6"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M6 18l2-2M16 8l2-2"/><circle cx="12" cy="12" r="4.5"/></svg>
+      </sc-if>
+      <sc-if value="{{showCheckIcon}}" hint-placeholder-val="{{false}}">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>
+      </sc-if>
+    </div>
+
+    <div style="text-align:center; display:flex; flex-direction:column; gap:8px; max-width:440px;">
+      <span style="font-size:12px; font-weight:600; color:var(--text-tertiary);">{{stepIndex}} / {{stepTotal}}</span>
+      <h2 style="margin:0; font-size:18px;">{{stepTitle}}</h2>
+      <p style="margin:0; font-size:13px; color:var(--text-secondary); line-height:1.6;">{{stepDesc}}</p>
+    </div>
+
+    <sc-if value="{{showCta}}" hint-placeholder-val="{{false}}">
+      <button class="btn primary" type="button">시스템 설정 열기</button>
+    </sc-if>
+
+    <div style="display:flex; gap:10px; margin-top:auto;">
+      <button class="btn" type="button" onClick="{{back}}" disabled="{{disableBack}}">이전</button>
+      <button class="btn primary" type="button" onClick="{{next}}">{{nextLabel}}</button>
+    </div>
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":680,"height":560}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { step: 1 };
+    this.steps = [
+      { title: "카메라 권한 허용", desc: "맥의 카메라에 접근할 수 있도록 권한을 허용해 주세요. 영상은 기기 밖으로 나가지 않아요.", icon: "camera", cta: false },
+      { title: "가상 카메라 설치 요청", desc: "Zoom·Discord에서 선택할 수 있는 가상 카메라를 설치할게요. 한 번만 하면 돼요.", icon: "extension", cta: false },
+      { title: "시스템 설정에서 확장 허용", desc: "시스템 설정 > 개인정보 보호 및 보안에서 CamZoom 확장을 허용해 주세요.", icon: "extension", cta: true },
+      { title: "미리보기에서 확대·비율 설정", desc: "원하는 위치로 확대하고 비율을 골라 보세요. 설정은 자동으로 저장돼요.", icon: "extension", cta: false },
+      { title: "설치 완료", desc: "이제 Zoom이나 Discord의 카메라 목록에서 CamZoom을 한 번만 선택하면 돼요.", icon: "check", cta: false }
+    ];
+  }
+  back() {
+    return () => this.setState({ step: Math.max(1, (this.state.step ?? 1) - 1) });
+  }
+  next() {
+    return () => this.setState({ step: Math.min(5, (this.state.step ?? 1) + 1) });
+  }
+  renderVals() {
+    const step = this.state.step ?? 1;
+    const current = this.steps[step - 1];
+    const dotClass = (n) => (n === step ? "dot-current" : n < step ? "dot-done" : "");
+    return {
+      themeCls: "theme-" + (this.props.theme ?? "light"),
+      stepIndex: step,
+      stepTotal: 5,
+      stepTitle: current.title,
+      stepDesc: current.desc,
+      showCta: current.cta,
+      showCameraIcon: current.icon === "camera",
+      showExtensionIcon: current.icon === "extension",
+      showCheckIcon: current.icon === "check",
+      dot1: dotClass(1),
+      dot2: dotClass(2),
+      dot3: dotClass(3),
+      dot4: dotClass(4),
+      dot5: dotClass(5),
+      disableBack: step === 1,
+      nextLabel: step === 5 ? "완료" : "다음",
+      back: this.back(),
+      next: this.next()
+    };
+  }
+}
+</script>
+</body>
+</html>

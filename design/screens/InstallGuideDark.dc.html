@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>설치 안내 창 (다크)</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./shared.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  body{ margin:0; }
+</style>
+</helmet>
+<div style="width:680px; height:560px;">
+  <dc-import name="InstallGuide" theme="dark" hint-size="680px,560px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":680,"height":560}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

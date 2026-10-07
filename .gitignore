@@ -1,0 +1,29 @@
+# Xcode
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+xcuserdata/
+DerivedData/
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/CamZoomCore/.build/
+
+# macOS
+.DS_Store
+
+# Build artifacts
+build/
+*.dSYM
+*.dSYM.zip
+
+# Signing (never commit certificates or provisioning profiles)
+*.p12
+*.mobileprovision
+*.provisionprofile
+
+# Distribution output
+*.dmg

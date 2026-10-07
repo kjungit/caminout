@@ -1,0 +1,32 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-10-04T12:00:00Z" },
+  "title": "CamZoom 화면 구성",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "MenuBarPopover.dc.html": { "x": 0, "y": 0, "w": 320, "h": 420, "title": "메뉴바 팝오버" },
+    "MainWindow.dc.html": { "x": 400, "y": 0, "w": 1180, "h": 720, "title": "메인 창", "is_interactive": true },
+    "SettingsWindow.dc.html": { "x": 1660, "y": 0, "w": 640, "h": 600, "title": "설정 창", "is_interactive": true },
+    "InstallGuide.dc.html": { "x": 2380, "y": 0, "w": 680, "h": 560, "title": "설치 안내 창", "is_interactive": true },
+    "MenuBarPopoverDark.dc.html": { "x": 0, "y": 1100, "w": 320, "h": 420, "title": "메뉴바 팝오버 (다크)" },
+    "MainWindowDark.dc.html": { "x": 400, "y": 1100, "w": 1180, "h": 720, "title": "메인 창 (다크)", "is_interactive": true },
+    "SettingsWindowDark.dc.html": { "x": 1660, "y": 1100, "w": 640, "h": 600, "title": "설정 창 (다크)", "is_interactive": true },
+    "InstallGuideDark.dc.html": { "x": 2380, "y": 1100, "w": 680, "h": 560, "title": "설치 안내 창 (다크)", "is_interactive": true }
+  },
+  "order": [
+    "MenuBarPopover.dc.html",
+    "MainWindow.dc.html",
+    "SettingsWindow.dc.html",
+    "InstallGuide.dc.html",
+    "MenuBarPopoverDark.dc.html",
+    "MainWindowDark.dc.html",
+    "SettingsWindowDark.dc.html",
+    "InstallGuideDark.dc.html"
+  ],
+  "notes": {
+    "title-row1": { "x": 0, "y": -260, "text": "라이트 모드", "kind": "title1", "maxW": 3060 },
+    "title-row2": { "x": 0, "y": 840, "text": "다크 모드", "kind": "title1", "maxW": 3060 }
+  },
+  "designSystems": []
+}
