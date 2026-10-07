@@ -65,14 +65,22 @@ public struct AppPreferences: Codable, Equatable, Sendable {
     public var menuBarOnly: Bool
     /// 발열·저전력 시 자동 품질 낮춤 (설계서 9.3).
     public var autoQualityReduction: Bool
+    /// 설치 안내(첫 실행 흐름)를 끝까지 봤는지.
+    public var onboardingCompleted: Bool
 
-    public init(appearance: Appearance = .system, menuBarOnly: Bool = false, autoQualityReduction: Bool = true) {
+    public init(
+        appearance: Appearance = .system,
+        menuBarOnly: Bool = false,
+        autoQualityReduction: Bool = true,
+        onboardingCompleted: Bool = false
+    ) {
         self.appearance = appearance
         self.menuBarOnly = menuBarOnly
         self.autoQualityReduction = autoQualityReduction
+        self.onboardingCompleted = onboardingCompleted
     }
 
-    private enum CodingKeys: String, CodingKey { case appearance, menuBarOnly, autoQualityReduction }
+    private enum CodingKeys: String, CodingKey { case appearance, menuBarOnly, autoQualityReduction, onboardingCompleted }
 
     public init(from decoder: Decoder) throws {
         let d = AppPreferences()
@@ -80,6 +88,7 @@ public struct AppPreferences: Codable, Equatable, Sendable {
         appearance = (try? c.decodeIfPresent(Appearance.self, forKey: .appearance)) ?? d.appearance
         menuBarOnly = try c.decodeIfPresent(Bool.self, forKey: .menuBarOnly) ?? d.menuBarOnly
         autoQualityReduction = try c.decodeIfPresent(Bool.self, forKey: .autoQualityReduction) ?? d.autoQualityReduction
+        onboardingCompleted = try c.decodeIfPresent(Bool.self, forKey: .onboardingCompleted) ?? d.onboardingCompleted
     }
 }
 
