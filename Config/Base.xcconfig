@@ -1,0 +1,5 @@
+// 서명 팀은 저장소에 넣지 않는다. Config/Signing.local.xcconfig에
+//   DEVELOPMENT_TEAM = XXXXXXXXXX
+// 한 줄을 적으면 로컬 빌드가 그 팀으로 서명된다 (.gitignore 대상).
+DEVELOPMENT_TEAM =
+#include? "Signing.local.xcconfig"
