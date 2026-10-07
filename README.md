@@ -7,74 +7,74 @@
 [`docs/00-overview.md`](docs/00-overview.md)(종합 문서)부터 읽어 주세요.
 
 > 이름의 "Zoom"은 실제 화상회의 서비스와 혼동될 수 있어 정식 이름이
-> 아닙니다. 최종 이름은 아직 정하지 않았습니다 (`docs/00-overview.md` 10장 참고).
+> 아닙니다. 이름이 정해지면 `CameraIdentity.productName` 한 곳과 앱 표시 이름만 바꿉니다.
 
 ## 지금 상태
 
-0단계(기술 검증, PoC) 착수 전 단계입니다. 이 저장소에는 앱의 핵심 계산
-로직(`CamZoomCore`)과 SwiftUI 화면의 1차 초안이 들어 있고, 실제 가상
-카메라 기능(카메라 익스텐션)은 아직 비어 있습니다.
+0단계(기술 검증) 진행 중. 기술 설계서 4장 구조대로 패키지·앱·카메라 익스텐션이
+들어 있고, 1단계 MVP 기능(위치 지정 확대, 비율, 반전·회전, 자동 저장, 가상 카메라)이
+동작하는 상태까지 만들어져 있습니다. 실제 화상 앱 호환성·성능 검증(게이트 A·B)은
+[`docs/verification/gate-a-b-checklist.md`](docs/verification/gate-a-b-checklist.md) 순서로 진행합니다.
 
 ## 폴더 구조
 
 ```
 .
-├── docs/
-│   ├── 00-overview.md       # 종합 문서 (여기부터 읽기)
-│   ├── 01-product-plan.md   # 기획서
-│   ├── 02-technical-design.md   # 기술 설계서
-│   ├── 03-verification-plan.md  # 기술 검증 계획
-│   └── verification/        # 검증 결과 보관
-├── design/
-│   └── screens/             # 화면 구성 와이어프레임 원본
+├── App/CamZoom/              # 호스트 앱 (SwiftUI 메뉴바 앱)
+│   ├── AppState.swift        #   앱 상태, 설정 저장, 캡처 켜기·끄기
+│   ├── Pipeline/             #   캡처 → 합성 → sink 출력, 미리보기
+│   ├── System/               #   확장 설치·제거, 자동 실행, App Nap 방지
+│   └── Views/                #   메뉴바 팝오버, 메인 창, 설정, 설치 안내
+├── Extension/CamZoomExtension/  # CMIO 카메라 익스텐션 (sink → source 전달, 안내 화면)
 ├── Packages/
-│   └── CamZoomCore/         # 앱·익스텐션이 공용으로 쓰는 순수 계산 로직 (Swift Package)
-│       ├── Sources/CamZoomCore/
-│       │   ├── AspectOption.swift   # 자르기 비율 (원본/정사각형/4:3/16:9)
-│       │   ├── CropState.swift      # 사용자 설정 모델 + 저장/불러오기
-│       │   ├── CropMath.swift       # 확대·위치 → 실제 잘라낼 좌표 계산
-│       │   └── FrameProcessor.swift # Core Image로 실제 프레임을 잘라서 확대
-│       └── Tests/CamZoomCoreTests/  # 위 계산 로직의 단위 테스트
-├── App/
-│   └── CamZoom/             # 호스트 앱 (SwiftUI + AVFoundation), 아직 Xcode 타깃 미생성
-│       ├── CamZoomApp.swift
-│       └── CameraManager.swift
-└── Extension/
-    └── README.md            # 카메라 익스텐션 타깃을 Xcode로 만드는 방법 (자리표시자)
+│   ├── CamZoomCore/          # 설정·프리셋 모델, 자르기 계산 (UI·미디어 의존 없음)
+│   ├── CamZoomShared/        # 장치·스트림 ID, 출력 형식, 사용자 정의 속성, 안내 화면
+│   ├── EffectsKit/           # 레이어 합성 엔진
+│   ├── CaptureKit/           # 카메라 캡처, 검증용 가짜 입력
+│   └── CameraBridge/         # 가상 카메라 sink 송신, 사용 중 감지
+├── Config/                   # xcconfig (서명 팀은 Signing.local.xcconfig, 커밋 안 함)
+├── project.yml               # XcodeGen 프로젝트 정의 → CamZoom.xcodeproj
+├── scripts/install-dev.sh    # 개발 빌드를 /Applications에 설치·실행
+├── tools/verification/       # 밀리초 시계, 색 막대, 결과 기록 양식
+├── design/screens/           # 화면 구성 와이어프레임 원본
+└── docs/                     # 기획·설계·검증 문서, 검증 결과
 ```
 
-기술 설계서 4장의 모듈 구조와는 아직 다릅니다. 맞추기 위해 고칠 부분은
-`docs/00-overview.md` 11장에 정리돼 있습니다.
+의존 방향: 앱 → 기능 패키지(EffectsKit·CaptureKit·CameraBridge) → 기반 패키지(CamZoomCore·CamZoomShared).
+익스텐션은 CamZoomShared만 쓰므로 효과를 고쳐도 익스텐션을 다시 설치할 필요가 없습니다.
 
-## 시작하는 방법 (맥에서, Xcode 필요)
+## 빌드
 
-이 저장소의 `.swift` 파일은 작성돼 있지만, 아직 `.xcodeproj`가 없습니다.
-Xcode 프로젝트 생성은 로컬 파일 시스템 조작이 많아 Xcode에서 직접 하는
-편이 안전합니다.
-
-1. Xcode에서 `File > New > Project > macOS > App`으로 `CamZoom` 앱
-   타깃을 만듭니다. Interface는 SwiftUI를 선택합니다.
-2. 자동 생성된 `CamZoomApp.swift`, `ContentView.swift`를 지우고, 이
-   저장소의 `App/CamZoom/*.swift` 두 파일을 프로젝트에 끌어다 넣습니다.
-3. `File > Add Package Dependencies... > Add Local...`로
-   `Packages/CamZoomCore`를 앱 타깃에 추가합니다.
-4. 타깃의 **Signing & Capabilities**에서 App Sandbox의 **Camera**를
-   체크합니다.
-5. **Info** 탭에 `Privacy - Camera Usage Description`을 추가합니다.
-6. ⌘R로 실행해서 원본 미리보기, 위치 지정 확대, 비율 선택이 동작하는지
-   확인합니다.
-7. 카메라 익스텐션 타깃은 `Extension/README.md`의 안내를 따라 별도로
-   생성합니다.
-
-## CamZoomCore만 따로 테스트하기 (Xcode 없이도 가능)
-
-`Packages/CamZoomCore`는 Swift Package라서, Swift 툴체인이 있는 맥에서는
-Xcode 프로젝트 없이도 계산 로직만 검증할 수 있습니다.
+필요한 것: Xcode 16 이상(Swift 6), macOS 14 이상, [XcodeGen](https://github.com/yonaskolb/XcodeGen)(`brew install xcodegen`).
 
 ```bash
-cd Packages/CamZoomCore
-swift test
+# 패키지 단위 테스트 (Xcode 프로젝트 없이도 가능)
+for p in Packages/*; do (cd "$p" && swift test); done
+
+# 서명 없이 빌드만 확인
+xcodegen generate
+xcodebuild -project CamZoom.xcodeproj -scheme CamZoom CODE_SIGNING_ALLOWED=NO build
 ```
+
+`project.yml`을 고쳤으면 `xcodegen generate`로 프로젝트를 다시 만들고, 만들어진
+`CamZoom.xcodeproj`도 함께 커밋합니다.
+
+## 실제로 가상 카메라 띄우기
+
+카메라 익스텐션은 시스템 확장이라 Apple Developer 계정으로 서명해야 하고, 앱이
+`/Applications`에 있어야 설치됩니다.
+
+1. Xcode > Settings > Accounts에서 Apple Developer 계정으로 로그인합니다.
+2. `Config/Signing.local.xcconfig` 파일을 만들고 팀 ID를 적습니다.
+   ```
+   DEVELOPMENT_TEAM = XXXXXXXXXX
+   ```
+3. `scripts/install-dev.sh`를 실행합니다. 빌드 번호를 올려 빌드하고
+   `/Applications/CamZoom.app`으로 복사한 뒤 실행합니다.
+4. 설치 안내 창에서 카메라 권한 → 가상 카메라 설치 → 시스템 설정에서 허용 순서로 진행합니다.
+5. QuickTime Player(새로운 동영상 녹화) 또는 화상 앱의 카메라 목록에서 **CamZoom Camera**를 고릅니다.
+
+삭제는 앱 설정 > 가상 카메라 > "가상 카메라 제거"로 먼저 확장을 지운 뒤 앱을 휴지통에 넣습니다.
 
 ## 문서
 
@@ -82,4 +82,6 @@ swift test
 - [`docs/01-product-plan.md`](docs/01-product-plan.md) — 기획서
 - [`docs/02-technical-design.md`](docs/02-technical-design.md) — 기술 설계서
 - [`docs/03-verification-plan.md`](docs/03-verification-plan.md) — 기술 검증 계획
-- [`Extension/README.md`](Extension/README.md) — 카메라 익스텐션 타깃 생성 안내
+- [`docs/verification/gate-a-b-checklist.md`](docs/verification/gate-a-b-checklist.md) — 게이트 A·B 진행 절차
+- [`docs/release.md`](docs/release.md) — 서명·공증·배포 준비
+- [`Extension/README.md`](Extension/README.md) — 카메라 익스텐션 구조

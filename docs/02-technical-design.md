@@ -112,7 +112,7 @@ flowchart LR
 | CamZoomCore | 패키지 | 설정·프리셋 모델, 자르기 계산, FaceFrame 등 데이터 모델 | 없음 (Foundation·CoreGraphics만) |
 | CamZoomShared | 패키지 | 가상 장치·스트림 ID, 출력 형식 목록, 안내 화면 이미지 생성 | 없음 |
 
-**저장소 변경 필요**: 현재 저장소의 `FrameProcessor`는 CamZoomCore에 있고, Extension 안내는 익스텐션이 CamZoomCore를 쓴다고 적고 있다. 이 설계에 맞춰 `FrameProcessor`는 EffectsKit으로 옮기고, 익스텐션 안내를 고친다.
+**저장소 반영 (2026-10-08)**: `FrameProcessor`는 없애고 EffectsKit의 Compositor로 대체했다. 익스텐션은 CamZoomShared만 의존한다. FaceTracking·CharacterKit은 해당 단계(3·4단계)에서 추가한다.
 
 ## 5. 프레임 파이프라인
 
@@ -302,7 +302,7 @@ struct FrameContext {
 - 모르는 필드는 무시하고, 없는 필드는 기본값으로 채운다. 새 버전에서 필드를 추가해도 이전 파일이 깨지지 않는다.
 - 해석에 실패한 파일은 `.broken` 이름으로 옮겨 두고 기본값으로 시작한다. 앱이 설정 파일 때문에 죽는 일은 없어야 한다.
 
-**저장소 변경 필요**: 현재 저장소의 `CropState`는 UserDefaults에 저장한다. 1단계에서 파일 저장소(SettingsStore)로 바꾼다.
+**저장소 반영 (2026-10-08)**: `CropState`는 UserDefaults 대신 SettingsStore(`settings.json`, `presets/<id>.json`)로 저장한다.
 
 ## 9. 동시성·성능·전력 관리
 

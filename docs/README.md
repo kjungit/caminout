@@ -6,7 +6,8 @@
 | [01-product-plan.md](01-product-plan.md) | 기획서: 문제 정의, 시장 분석, 기능·로드맵, 사용자 흐름, 배포, 리스크 |
 | [02-technical-design.md](02-technical-design.md) | 기술 설계서: 아키텍처, 기술 스택, 모듈, 파이프라인, ADR, 설계 검토 |
 | [03-verification-plan.md](03-verification-plan.md) | 기술 검증 계획: 게이트 4개, 검증 항목 25개, 측정법, 확정 체크리스트 |
-| [verification/](verification/) | 검증 결과 원본 보관 폴더 (게이트별) |
+| [verification/](verification/) | 게이트 A·B 진행 절차, 검증 결과 원본 보관 폴더 (게이트별) |
+| [release.md](release.md) | 서명·공증·배포 준비, GitHub 비밀값 |
 
 처음 보는 사람은 `00-overview.md`부터 읽으세요. 기술적인 내용이 문서끼리
 다르면 `02-technical-design.md`가 우선합니다.

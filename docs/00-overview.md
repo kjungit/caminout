@@ -14,9 +14,9 @@
 | [화면 구성](../design/screens/README.md) | 메뉴바 팝오버, 메인 창, 설정 창, 설치 안내 창의 라이트·다크 와이어프레임 | 1차 완료 |
 | [기술 설계서](02-technical-design.md) | 아키텍처, 기술 스택·버전, 모듈 구조, 프레임 파이프라인, 앱↔익스텐션 통신, 효과·캐릭터 엔진, 저장, 동시성, CI, 테스트, ADR, 설계 검토 16건 | 완료 (14장) |
 | [기술 검증 계획](03-verification-plan.md) | 게이트 4개, 검증 항목 25개, 통과 기준·대안, 기기 매트릭스, 측정법, 확정 체크리스트, 일정 | 완료 |
-| [GitHub 저장소 caminout](https://github.com/kjungit/caminout) | 이 문서들, 자르기 계산 패키지와 단위 테스트, SwiftUI 화면 초안, 익스텐션 설정 안내 | 초기 구조 |
+| [GitHub 저장소 caminout](https://github.com/kjungit/caminout) | 이 문서들, 설계서 구조의 패키지 5개, 호스트 앱, 카메라 익스텐션, CI, 검증 도구 | 0단계 코드 완료 |
 
-**현재 단계**: 기획·설계 완료 → **0단계 기술 검증 준비 중** → 1단계 MVP 개발
+**현재 단계**: 기획·설계 완료 → **0단계 기술 검증 진행 중** (코드·도구 준비 완료, 실기 검증 대기) → 1단계 MVP 개발
 
 **이름**: CamZoom은 가칭이다. 실제 화상회의 서비스 Zoom과 혼동되고 상표 문제가 생길 수 있어 정식 이름은 따로 정한다(10장).
 
@@ -316,32 +316,39 @@ E를 다시 검토한다면 게이트 D처럼 별도 검증(맥 실시간 성능
 
 ## 11. 저장소 현황과 다음 단계
 
-이 저장소의 초기 구조는 기술 설계서보다 먼저 만들어져서, 설계서에 맞추려면 3가지를 고쳐야 한다(문서 추가는 이번에 반영).
+저장소는 기술 설계서 4장의 모듈 구조로 다시 짜였다. 1단계 MVP 범위(위치 지정 확대, 비율, 반전·회전, 설정 자동 저장, 가상 카메라)의 코드와 게이트 A·B 측정 도구가 들어 있고, 남은 일은 서명 빌드로 실제 화상 앱에서 게이트 A·B를 확인하는 것이다.
 
 **현재 들어 있는 것**
 
 | 경로 | 내용 |
 | --- | --- |
-| `docs/` | 이 종합 문서, 기획서, 기술 설계서, 기술 검증 계획, 검증 결과 보관 폴더 |
+| `docs/` | 이 종합 문서, 기획서, 기술 설계서, 기술 검증 계획, [게이트 A·B 진행 절차](verification/gate-a-b-checklist.md), [배포 준비](release.md) |
 | `design/screens/` | 화면 구성 캔버스 원본 파일 (라이트·다크 8개 화면) |
-| `Packages/CamZoomCore/` | 자르기 비율, 설정 모델, 자르기 좌표 계산, 프레임 처리 + 단위 테스트 |
-| `App/CamZoom/` | SwiftUI 메인 화면 초안(위치 지정 확대·비율·초기화), 카메라 캡처 매니저 |
-| `Extension/README.md` | Xcode 템플릿으로 카메라 익스텐션 타깃 만드는 방법 |
-| `README.md`, `.gitignore` | 저장소 소개, 빌드 방법 |
+| `Packages/` | CamZoomCore, CamZoomShared, EffectsKit, CaptureKit, CameraBridge + 각 단위 테스트 |
+| `App/CamZoom/` | 메뉴바 팝오버, 메인 창(조절 탭), 설정 창, 설치 안내 5단계, 프레임 파이프라인, 확장 설치·제거 |
+| `Extension/CamZoomExtension/` | CMIO 카메라 익스텐션 (sink → source 전달, 안내 화면, 사용자 정의 속성) |
+| `project.yml`, `CamZoom.xcodeproj` | XcodeGen 프로젝트 정의와 생성된 프로젝트 |
+| `scripts/`, `tools/verification/` | 개발 설치 스크립트, 밀리초 시계·색 막대·결과 기록 양식 |
+| `.github/workflows/` | CI(패키지 테스트, 서명 없는 빌드), 릴리스(서명·공증·DMG) |
 
-**설계서에 맞추기 위해 고칠 것**
+**설계서에 맞추기 위해 고친 것**
 
-- [ ] `FrameProcessor`를 CamZoomCore에서 EffectsKit으로 옮긴다 (CamZoomCore는 계산·모델만)
-- [ ] `CropState` 저장을 UserDefaults에서 버전 번호가 붙은 JSON 파일(SettingsStore)로 바꾼다
-- [ ] `Extension/README.md`의 "익스텐션이 CamZoomCore를 쓴다"를 "CamZoomShared만 쓴다"로 고치고, CamZoomShared 패키지를 추가한다
+- [x] `FrameProcessor`를 없애고 EffectsKit의 합성기(Compositor)와 레이어로 대체했다 (CamZoomCore는 계산·모델만)
+- [x] `CropState` 저장을 UserDefaults에서 버전 번호가 붙은 JSON 파일(SettingsStore)로 바꿨다
+- [x] 익스텐션은 CamZoomShared만 쓴다. CamZoomShared 패키지를 추가했다
 - [x] `docs/`에 기술 설계서, 기술 검증 계획, 이 종합 문서를 추가하고 `docs/verification/` 폴더를 만든다
+
+**설계와 다르게 둔 것**
+
+- Sparkle 자동 업데이트는 업데이트 피드를 올릴 웹사이트가 생길 때 넣는다 ([배포 준비](release.md)).
+- 번들 ID는 `com.kjungit.caminout`, 익스텐션 `com.kjungit.caminout.extension`, 장치 UID는 `CamZoomShared/CameraIdentity.swift`에 임시로 정했다. 첫 배포 전에 앱 이름과 함께 확정한다.
 
 **다음 단계**
 
 1. 10장의 미결정 사항 중 앱 이름, 주 사용 대상, Intel 지원 여부를 정한다.
-2. Apple Developer Program에 가입하고 인증서·프로파일을 발급한다.
-3. 검증 준비: 테스트용 새 사용자 계정, 가짜 카메라 입력, 측정 도구(밀리초 시계, 색 막대, 테스트 영상), 결과 기록 시트.
-4. 게이트 A(1주) → 게이트 B(1주) → 게이트 검토.
+2. Xcode에 Apple Developer 계정으로 로그인하고 `scripts/install-dev.sh`로 서명 빌드를 설치한다.
+3. 검증 준비: 테스트용 새 사용자 계정, 테스트 영상. 가짜 카메라 입력과 측정 도구는 저장소에 있다.
+4. [게이트 A·B 진행 절차](verification/gate-a-b-checklist.md)대로 게이트 A(1주) → 게이트 B(1주) → 게이트 검토.
 5. 기술 확정 체크리스트를 채우고 ADR을 갱신한 뒤 1단계 MVP 개발을 시작한다.
 
 실제 빌드와 카메라·가상 카메라 테스트는 맥에서 Xcode로 해야 한다. 코드 작업을 맡길 때는 맥에서 직접 빌드·실행까지 할 수 있는 Claude Code가 적합하다.
