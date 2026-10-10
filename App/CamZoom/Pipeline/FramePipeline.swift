@@ -22,6 +22,9 @@ struct PipelineStats: Equatable, Sendable {
     var sentToSink: UInt64 = 0
     var poolExhausted: Int = 0
     var sinkConnected = false
+    /// 이번 1초 구간에 내보낸 프레임과 버린 프레임 (자동 품질 낮춤의 누락 판단, 설계서 9.3).
+    var deliveredInWindow = 0
+    var droppedInWindow = 0
 }
 
 /// 미리보기에 쓰는 출력 버퍼. 화상 앱으로 나가는 것과 같은 버퍼다 (설계 원칙 2).
@@ -64,6 +67,9 @@ final class FramePipeline: @unchecked Sendable {
     private var framesThisWindow = 0
     private var windowStart = CFAbsoluteTimeGetCurrent()
     private var droppedBusy: UInt64 = 0
+    private var droppedAtWindowStart: UInt64 = 0
+    /// 출력 프레임 레이트 제한(품질 3단계)에 쓰는 마지막 출력 시각.
+    private var lastOutputTime = CMTime.invalid
 
     /// renderQueue에서 불린다.
     var onOutput: (@Sendable (OutputFrame) -> Void)?
@@ -154,6 +160,12 @@ final class FramePipeline: @unchecked Sendable {
     /// renderQueue.
     private func process(_ frame: CapturedFrame) {
         let snapshot = config.withLock { $0 }
+        if let limit = snapshot.quality.outputFPSLimit, lastOutputTime.isValid {
+            // 카메라 타임스탬프가 조금씩 흔들려도 15fps가 유지되게 2ms 여유를 둔다.
+            let interval = CMTimeSubtract(frame.time, lastOutputTime).seconds
+            if interval >= 0, interval < 1 / Double(limit) - 0.002 { return }
+        }
+        lastOutputTime = frame.time
         frameIndex &+= 1
 
         let state = signposter.beginInterval("render")
@@ -204,6 +216,10 @@ final class FramePipeline: @unchecked Sendable {
         stats.sentToSink = sink.sentCount
         stats.poolExhausted = compositor.poolExhaustedCount
         stats.sinkConnected = sink.isConnected
+        let droppedTotal = droppedBusy + sink.droppedCount
+        stats.deliveredInWindow = framesThisWindow
+        stats.droppedInWindow = Int(clamping: droppedTotal &- droppedAtWindowStart)
+        droppedAtWindowStart = droppedTotal
         onStats?(stats)
 
         renderDurations.removeAll(keepingCapacity: true)

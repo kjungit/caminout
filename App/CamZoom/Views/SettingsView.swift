@@ -11,6 +11,8 @@ struct SettingsView: View {
     @State private var loginError: String?
     @State private var confirmRemoval = false
     @AppStorage("showDebugOverlay") private var showDebugOverlay = false
+    @State private var exportStatus: String?
+    @State private var exporting = false
 
     var body: some View {
         @Bindable var app = app
@@ -59,6 +61,7 @@ struct SettingsView: View {
                     Text(loginError).font(.caption).foregroundStyle(.red)
                 }
                 Toggle("메뉴바 아이콘만 표시 (Dock에 안 보이기)", isOn: $app.settings.preferences.menuBarOnly)
+                Toggle("맥이 뜨겁거나 저전력 모드일 때 자동으로 품질 낮추기", isOn: $app.settings.preferences.autoQualityReduction)
             }
 
             Section("가상 카메라") {
@@ -79,6 +82,17 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section("문제 신고") {
+                Button(exporting ? "만드는 중…" : "진단 정보 내보내기…", action: exportDiagnostics)
+                    .disabled(exporting)
+                Text("앱 정보, 설정, 이번 실행의 로그, macOS가 모은 충돌·성능 진단을 zip 하나로 저장해요. 영상과 사진은 들어가지 않고, 어디로도 자동으로 보내지 않아요.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if let exportStatus {
+                    Text(exportStatus).font(.caption)
+                }
+            }
+
             Section("검증·개발") {
                 Toggle("출력에 프레임 번호 표시", isOn: $app.settings.output.showFrameNumber)
                 Toggle("미리보기에 측정값 표시", isOn: $showDebugOverlay)
@@ -96,6 +110,25 @@ struct SettingsView: View {
             Button("제거", role: .destructive) { app.extensionManager.deactivate() }
         } message: {
             Text("화상 앱 카메라 목록에서 \(CameraIdentity.deviceName)가 사라져요. 앱을 지우기 전에 먼저 제거해 주세요.")
+        }
+    }
+
+    private func exportDiagnostics() {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.zip]
+        panel.nameFieldStringValue = "\(CameraIdentity.productName)-진단.zip"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        exporting = true
+        exportStatus = nil
+        Task {
+            do {
+                try await app.exportDiagnostics(to: url)
+                exportStatus = "저장했어요: \(url.lastPathComponent)"
+                NSWorkspace.shared.activateFileViewerSelecting([url])
+            } catch {
+                exportStatus = "저장하지 못했어요: \(error.localizedDescription)"
+            }
+            exporting = false
         }
     }
 

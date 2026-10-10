@@ -35,6 +35,9 @@ final class AppState {
     private(set) var isCapturing = false
     private(set) var availableCameras: [CameraDeviceInfo] = []
     private(set) var cameraAuthorized = CameraAuthorization.isAuthorized
+    /// 자동 품질 낮춤 단계와 그 이유 (설계서 9.3).
+    private(set) var qualityLevel: QualityLevel = .normal
+    private(set) var qualityConditions = QualityConditions()
 
     let extensionManager = ExtensionManager()
     let previewHub = PreviewHub()
@@ -43,6 +46,8 @@ final class AppState {
     @ObservationIgnored private let pipeline = FramePipeline()
     @ObservationIgnored private let monitor = VirtualCameraMonitor()
     @ObservationIgnored private let activity = StreamingActivity()
+    @ObservationIgnored private let quality = QualityMonitor()
+    @ObservationIgnored private let diagnostics = DiagnosticsCollector()
     @ObservationIgnored private var previewDemand = 0
     @ObservationIgnored private var checkedVersion = false
     @ObservationIgnored private let logger = Logger(subsystem: "com.kjungit.caminout", category: "app")
@@ -52,6 +57,8 @@ final class AppState {
         self.settings = store.load()
         self.presets = store.loadPresets()
         wirePipeline()
+        wireQuality()
+        diagnostics.start()
         pushConfig()
         applyPreferences()
         refreshCameras()
@@ -96,6 +103,16 @@ final class AppState {
             return extensionManager.state == .installed ? "가상 카메라 준비 중" : "가상 카메라 \(extensionManager.state.label)"
         }
         return cameraStatus.inUse ? "화상 앱에서 사용 중" : "대기 중 (화상 앱에서 \(CameraIdentity.deviceName) 선택)"
+    }
+
+    /// 품질을 낮췄을 때 메뉴바 팝오버에 보이는 한 줄. 정상이면 nil.
+    var qualityNotice: String? {
+        guard qualityLevel > .normal else { return nil }
+        guard let reason = qualityConditions.reason else {
+            return "품질을 낮춘 상태예요. 30초마다 한 단계씩 돌아가요 (\(qualityLevel.rawValue)단계)"
+        }
+        let effect = qualityLevel.outputFPSLimit.map { "출력을 \($0)fps로" } ?? "효과 품질을"
+        return "\(reason) \(effect) 낮췄어요 (\(qualityLevel.rawValue)단계)"
     }
 
     // MARK: - 미리보기 창이 열리고 닫힐 때
@@ -153,6 +170,14 @@ final class AppState {
         )
     }
 
+    /// 진단 묶음(zip)을 만든다 (G13). 로그 읽기와 압축은 주 스레드 밖에서 한다.
+    func exportDiagnostics(to destination: URL) async throws {
+        let summary = diagnosticsSummary()
+        try await Task.detached(priority: .userInitiated) {
+            try DiagnosticsExporter.export(summary: summary, to: destination)
+        }.value
+    }
+
     func dismissError() {
         errorMessage = nil
     }
@@ -172,15 +197,28 @@ final class AppState {
             }
         }
         pipeline.onStats = { [weak self] stats in
-            Task { @MainActor in self?.stats = stats }
+            Task { @MainActor in
+                self?.stats = stats
+                self?.quality.record(stats)
+            }
         }
         pipeline.onError = { [weak self] error in
             Task { @MainActor in self?.errorMessage = error.message }
         }
     }
 
+    private func wireQuality() {
+        quality.onChange = { [weak self] level, conditions in
+            guard let self else { return }
+            qualityLevel = level
+            qualityConditions = conditions
+            pushConfig()
+        }
+        quality.setEnabled(settings.preferences.autoQualityReduction)
+    }
+
     private func pushConfig() {
-        pipeline.update(PipelineConfig(settings: settings, outputSize: outputFormat.size))
+        pipeline.update(PipelineConfig(settings: settings, outputSize: outputFormat.size, quality: qualityLevel))
     }
 
     private func didChange(_ status: VirtualCameraStatus) {
@@ -217,12 +255,47 @@ final class AppState {
         } else if isCapturing {
             pipeline.stop()
             isCapturing = false
+            quality.captureStopped()
             sourceThumbnail = nil
             previewHub.clear()
         }
     }
 
+    private func diagnosticsSummary() -> String {
+        let info = ProcessInfo.processInfo
+        let bundle = Bundle.main
+        let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "-"
+        return """
+        \(CameraIdentity.productName) 진단 정보
+        만든 시각: \(Date().formatted(.iso8601))
+
+        앱: \(version) (\(extensionManager.appBuild))
+        익스텐션: \(cameraStatus.extensionBuild ?? extensionManager.installedBuild ?? "-"), 상태 \(extensionManager.state.label)
+        프로토콜: 앱 \(CameraIdentity.protocolVersion), 익스텐션 \(cameraStatus.protocolVersion.map(String.init) ?? "-")
+        macOS: \(info.operatingSystemVersionString)
+        기기: \(Self.hardwareModel()), 메모리 \(info.physicalMemory / 1_073_741_824)GB
+        발열: \(info.thermalState.rawValue), 저전력 모드: \(info.isLowPowerModeEnabled)
+        품질 단계: \(qualityLevel.rawValue) (자동 낮춤 \(settings.preferences.autoQualityReduction ? "켬" : "끔"))
+
+        화상 앱 사용 중: \(cameraStatus.inUse), 출력 형식: \(outputFormat.description)
+        캡처 중: \(isCapturing), 입력: \(settings.output.input)
+        출력 \(String(format: "%.1f", stats.outputFPS))fps, 합성 p95 \(String(format: "%.1f", stats.renderP95))ms, 버림 합성 \(stats.droppedBusy)·sink \(stats.droppedSink), 풀 고갈 \(stats.poolExhausted)
+
+        익스텐션 로그는 들어 있지 않아요. 필요하면 터미널에서:
+        log show --last 1h --predicate 'subsystem BEGINSWITH "com.kjungit.caminout"' --info
+        """
+    }
+
+    private static func hardwareModel() -> String {
+        var size = 0
+        sysctlbyname("hw.model", nil, &size, nil, 0)
+        var buffer = [CChar](repeating: 0, count: max(size, 1))
+        sysctlbyname("hw.model", &buffer, &size, nil, 0)
+        return String(cString: buffer)
+    }
+
     private func applyPreferences() {
+        quality.setEnabled(settings.preferences.autoQualityReduction)
         switch settings.preferences.appearance {
         case .system: NSApp?.appearance = nil
         case .light: NSApp?.appearance = NSAppearance(named: .aqua)

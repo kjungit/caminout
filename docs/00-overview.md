@@ -325,7 +325,7 @@ E를 다시 검토한다면 게이트 D처럼 별도 검증(맥 실시간 성능
 | `docs/` | 이 종합 문서, 기획서, 기술 설계서, 기술 검증 계획, [게이트 A·B 진행 절차](verification/gate-a-b-checklist.md), [배포 준비](release.md) |
 | `design/screens/` | 화면 구성 캔버스 원본 파일 (라이트·다크 8개 화면) |
 | `Packages/` | CamZoomCore, CamZoomShared, EffectsKit, CaptureKit, CameraBridge + 각 단위 테스트 |
-| `App/CamZoom/` | 메뉴바 팝오버, 메인 창(조절 탭), 설정 창, 설치 안내 5단계, 프레임 파이프라인, 확장 설치·제거 |
+| `App/CamZoom/` | 메뉴바 팝오버, 메인 창(조절 탭), 설정 창, 설치 안내 5단계, 프레임 파이프라인, 확장 설치·제거, 자동 품질 낮춤, MetricKit 진단·진단 정보 내보내기 |
 | `Extension/CamZoomExtension/` | CMIO 카메라 익스텐션 (sink → source 전달, 안내 화면, 사용자 정의 속성) |
 | `project.yml`, `CamZoom.xcodeproj` | XcodeGen 프로젝트 정의와 생성된 프로젝트 |
 | `scripts/`, `tools/verification/` | 개발 설치 스크립트, 밀리초 시계·색 막대·결과 기록 양식 |

@@ -9,28 +9,33 @@ public struct PipelineConfig: Equatable, Sendable {
     public var showFrameNumber: Bool
     /// 화상 앱이 고른 출력 형식의 크기. 아무도 쓰지 않을 때는 미리보기용 기본값.
     public var outputSize: CGSize
+    /// 자동 품질 낮춤 단계 (설계서 9.3).
+    public var quality: QualityLevel
 
     public init(
         crop: CropState = CropState(),
         fitMode: OutputFitMode = .fit,
         effectsEnabled: Bool = true,
         showFrameNumber: Bool = false,
-        outputSize: CGSize = CGSize(width: 1920, height: 1080)
+        outputSize: CGSize = CGSize(width: 1920, height: 1080),
+        quality: QualityLevel = .normal
     ) {
         self.crop = crop
         self.fitMode = fitMode
         self.effectsEnabled = effectsEnabled
         self.showFrameNumber = showFrameNumber
         self.outputSize = outputSize
+        self.quality = quality
     }
 
-    public init(settings: AppSettings, outputSize: CGSize) {
+    public init(settings: AppSettings, outputSize: CGSize, quality: QualityLevel = .normal) {
         self.init(
             crop: settings.crop.sanitized,
             fitMode: settings.output.fitMode,
             effectsEnabled: settings.output.effectsEnabled,
             showFrameNumber: settings.output.showFrameNumber,
-            outputSize: outputSize
+            outputSize: outputSize,
+            quality: quality
         )
     }
 }

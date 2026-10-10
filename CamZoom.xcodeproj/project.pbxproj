@@ -15,11 +15,13 @@
 		24C6447A49F5253D66F67C2C /* PreviewHub.swift in Sources */ = {isa = PBXBuildFile; fileRef = 709D8A4573582314B171A3D7 /* PreviewHub.swift */; };
 		35932F8A1B3CF98DA58B8BE9 /* AdjustPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 322CC5BA916CF051CAF164EE /* AdjustPanel.swift */; };
 		3D4CA8BCDCC073FCF860CA20 /* CamZoomCore in Frameworks */ = {isa = PBXBuildFile; productRef = AAFD145C63A04FDE856712AD /* CamZoomCore */; };
+		4B3EA81D1276B50A5B4110E3 /* QualityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 973E021D17C73F5D13F03E90 /* QualityMonitor.swift */; };
 		538FEEBD17A982933C94803B /* MainWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72644B16481552EA8DE93A29 /* MainWindowView.swift */; };
 		69ADFD22F869EACC2731AEAC /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A71CCB9B7965BB391E2AEF5 /* AppState.swift */; };
 		7CB6F1015CE003F2279FD668 /* CameraBridge in Frameworks */ = {isa = PBXBuildFile; productRef = EC5A39782C688AFB827D35B6 /* CameraBridge */; };
 		7DAC517B57FF6394832D8964 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BEE48A99030A1F780D62764 /* SettingsView.swift */; };
 		7E1CDA5CB41867181C73A970 /* EffectsKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5A8829A51F30ECB4070A5A96 /* EffectsKit */; };
+		8FC2F9ABB9424EABC47249A6 /* Diagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAD6803D5B0D61BA3AAEEBB5 /* Diagnostics.swift */; };
 		986F5138C783F663B4194DFD /* StreamSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72B3E52B7525D3B848E0F2B4 /* StreamSources.swift */; };
 		9E3B35A8464C6FD4E4152E94 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95134B7D9F3B5AA6CF496212 /* main.swift */; };
 		A5EB79B10C23402D5AAF34A7 /* CaptureKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1D3CF2427D918FF5F068303 /* CaptureKit */; };
@@ -76,12 +78,14 @@
 		7BEE48A99030A1F780D62764 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		84E06AC2109BEF292D15CE19 /* ExtensionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionManager.swift; sourceTree = "<group>"; };
 		95134B7D9F3B5AA6CF496212 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		973E021D17C73F5D13F03E90 /* QualityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QualityMonitor.swift; sourceTree = "<group>"; };
 		A0B5927A937CC5D820F6AEB2 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		B0FC04570F615C58A579B60C /* PreviewViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewViews.swift; sourceTree = "<group>"; };
 		B1B59456569401E850498B6E /* CamZoomExtension.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = CamZoomExtension.systemextension; sourceTree = BUILT_PRODUCTS_DIR; };
 		B27B3976969AA550C865B3BC /* SystemServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemServices.swift; sourceTree = "<group>"; };
 		BA7F6B64C95EBFE954BFD9FB /* InstallGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallGuideView.swift; sourceTree = "<group>"; };
 		CA9693A6D5677E87A37ED742 /* CameraBridge */ = {isa = PBXFileReference; lastKnownFileType = folder; name = CameraBridge; path = Packages/CameraBridge; sourceTree = SOURCE_ROOT; };
+		EAD6803D5B0D61BA3AAEEBB5 /* Diagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diagnostics.swift; sourceTree = "<group>"; };
 		FEE75B5FAC835248076F35F1 /* CaptureKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = CaptureKit; path = Packages/CaptureKit; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
@@ -131,7 +135,9 @@
 		3438943E42464E40BAED4997 /* System */ = {
 			isa = PBXGroup;
 			children = (
+				EAD6803D5B0D61BA3AAEEBB5 /* Diagnostics.swift */,
 				84E06AC2109BEF292D15CE19 /* ExtensionManager.swift */,
+				973E021D17C73F5D13F03E90 /* QualityMonitor.swift */,
 				B27B3976969AA550C865B3BC /* SystemServices.swift */,
 			);
 			path = System;
@@ -321,6 +327,7 @@
 				35932F8A1B3CF98DA58B8BE9 /* AdjustPanel.swift in Sources */,
 				69ADFD22F869EACC2731AEAC /* AppState.swift in Sources */,
 				21F6CC809C61C13BCE0442F4 /* CamZoomApp.swift in Sources */,
+				8FC2F9ABB9424EABC47249A6 /* Diagnostics.swift in Sources */,
 				A974C87C2C9F7E504A6082D8 /* ExtensionManager.swift in Sources */,
 				0C512BD0DD9BE393D18B790A /* FramePipeline.swift in Sources */,
 				249AF4464E2CF2C15267AD2D /* InstallGuideView.swift in Sources */,
@@ -328,6 +335,7 @@
 				B8485038D892A771AEB24FB1 /* MenuBarView.swift in Sources */,
 				24C6447A49F5253D66F67C2C /* PreviewHub.swift in Sources */,
 				10C9F46B9BBA19912FFDAF36 /* PreviewViews.swift in Sources */,
+				4B3EA81D1276B50A5B4110E3 /* QualityMonitor.swift in Sources */,
 				7DAC517B57FF6394832D8964 /* SettingsView.swift in Sources */,
 				B95A5F5A301CC67036A7B3AF /* SystemServices.swift in Sources */,
 				BF34E201B175348EB95B7013 /* Theme.swift in Sources */,

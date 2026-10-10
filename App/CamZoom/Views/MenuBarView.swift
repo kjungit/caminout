@@ -29,6 +29,12 @@ struct MenuBarView: View {
                         .frame(width: 7, height: 7)
                     Text(app.virtualCameraSummary).font(.caption).lineLimit(1)
                 }
+                if let notice = app.qualityNotice {
+                    Label(notice, systemImage: "thermometer.medium")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .lineLimit(2)
+                }
             }
 
             HStack {
