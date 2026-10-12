@@ -76,6 +76,16 @@ xcodebuild -project CamZoom.xcodeproj -scheme CamZoom CODE_SIGNING_ALLOWED=NO bu
 
 삭제는 앱 설정 > 가상 카메라 > "가상 카메라 제거"로 먼저 확장을 지운 뒤 앱을 휴지통에 넣습니다.
 
+## 라이선스
+
+코드는 [MIT 라이선스](LICENSE)입니다. 다음은 MIT 라이선스 대상이 아니며 저작권자가 모든 권리를 가집니다.
+
+- 앱 이름, 앱 아이콘, 로고
+- 기본 캐릭터, 스티커, 프레임 등 앱에 들어가는 그림·소리 자산
+
+코드를 고쳐서 배포할 때는 다른 앱 이름과 아이콘, 다른 번들 ID·가상 장치 UID(`CamZoomShared/CameraIdentity.swift`)를 써 주세요.
+같은 ID를 쓰면 사용자의 맥에서 이 앱의 가상 카메라와 충돌합니다.
+
 ## 문서
 
 - [`docs/00-overview.md`](docs/00-overview.md) — 종합 문서
