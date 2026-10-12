@@ -29,6 +29,7 @@
 		B8485038D892A771AEB24FB1 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B5927A937CC5D820F6AEB2 /* MenuBarView.swift */; };
 		B95A5F5A301CC67036A7B3AF /* SystemServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = B27B3976969AA550C865B3BC /* SystemServices.swift */; };
 		BF34E201B175348EB95B7013 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40ECE21CFD74196372E354CF /* Theme.swift */; };
+		E553DD8A2B74477E18C3A623 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 1DA4E0CC5718F28C774D1899 /* PrivacyInfo.xcprivacy */; };
 		EC1FBF3B01B87B780AFDB015 /* CamZoomShared in Frameworks */ = {isa = PBXBuildFile; productRef = 10B645D3D4C8E7F4A69B6521 /* CamZoomShared */; };
 		ED1212C2B5C68E70245A8580 /* CamZoomExtension.systemextension in Embed System Extensions */ = {isa = PBXBuildFile; fileRef = B1B59456569401E850498B6E /* CamZoomExtension.systemextension */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		EEBB32FF410A2B8576B399B3 /* ExtensionDeviceSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 196225362C91197681D4E963 /* ExtensionDeviceSource.swift */; };
@@ -61,6 +62,7 @@
 
 /* Begin PBXFileReference section */
 		196225362C91197681D4E963 /* ExtensionDeviceSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionDeviceSource.swift; sourceTree = "<group>"; };
+		1DA4E0CC5718F28C774D1899 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		235CBB80E90738DA78E5A1E6 /* ExtensionProviderSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionProviderSource.swift; sourceTree = "<group>"; };
 		2955370D1D9870617BA20CD1 /* CamZoomApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CamZoomApp.swift; sourceTree = "<group>"; };
 		2DE522ACE7A70B1184F25C22 /* EffectsKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = EffectsKit; path = Packages/EffectsKit; sourceTree = SOURCE_ROOT; };
@@ -172,6 +174,7 @@
 				99CB68795F4F1A943094882A /* Views */,
 				4A71CCB9B7965BB391E2AEF5 /* AppState.swift */,
 				2955370D1D9870617BA20CD1 /* CamZoomApp.swift */,
+				1DA4E0CC5718F28C774D1899 /* PrivacyInfo.xcprivacy */,
 				40ECE21CFD74196372E354CF /* Theme.swift */,
 			);
 			path = CamZoom;
@@ -253,6 +256,7 @@
 			buildConfigurationList = 97B9B487BB3B835AE51F174B /* Build configuration list for PBXNativeTarget "CamZoom" */;
 			buildPhases = (
 				37B460DE6B92C61B974DA407 /* Sources */,
+				3D1EBB1615302921E7781866 /* Resources */,
 				B3B14A544355CE037C0C8B24 /* Frameworks */,
 				FCE0716CBB8C527D4C520EBE /* Embed System Extensions */,
 			);
@@ -318,6 +322,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		3D1EBB1615302921E7781866 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E553DD8A2B74477E18C3A623 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		37B460DE6B92C61B974DA407 /* Sources */ = {

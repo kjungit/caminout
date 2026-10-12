@@ -81,6 +81,7 @@ final class DiagnosticsCollector: NSObject, MXMetricManagerSubscriber, @unchecke
 /// 지원 요청에 첨부할 진단 묶음(zip)을 만든다 (설계서 2장 로그, G13).
 ///
 /// 담는 것: 앱 정보, 설정 파일, 이번 실행의 앱 로그, MetricKit 진단. 영상·이미지는 담지 않는다.
+/// 홈 폴더 경로는 `~`로 바꿔 맥 사용자 이름이 들어가지 않게 한다 (개인정보 처리 방침).
 enum DiagnosticsExporter {
     static let logSubsystemPrefix = "com.kjungit.caminout"
 
@@ -94,19 +95,38 @@ enum DiagnosticsExporter {
         try fm.createDirectory(at: staging, withIntermediateDirectories: true)
         defer { try? fm.removeItem(at: staging.deletingLastPathComponent()) }
 
-        try summary.write(to: staging.appendingPathComponent("info.txt"), atomically: true, encoding: .utf8)
-        try appLog().write(to: staging.appendingPathComponent("app-log.txt"), atomically: true, encoding: .utf8)
+        try writeMasked(summary, to: staging.appendingPathComponent("info.txt"))
+        try writeMasked(appLog(), to: staging.appendingPathComponent("app-log.txt"))
 
         let settings = SettingsStore.defaultDirectory.appendingPathComponent(SettingsStore.settingsFileName)
-        if fm.fileExists(atPath: settings.path) {
-            try fm.copyItem(at: settings, to: staging.appendingPathComponent(SettingsStore.settingsFileName))
+        if let text = try? String(contentsOf: settings, encoding: .utf8) {
+            try writeMasked(text, to: staging.appendingPathComponent(SettingsStore.settingsFileName))
         }
         let diagnostics = DiagnosticsCollector.defaultDirectory
-        if fm.fileExists(atPath: diagnostics.path) {
-            try fm.copyItem(at: diagnostics, to: staging.appendingPathComponent(DiagnosticsCollector.folderName))
+        let payloads = (try? fm.contentsOfDirectory(at: diagnostics, includingPropertiesForKeys: nil)) ?? []
+        if !payloads.isEmpty {
+            let folder = staging.appendingPathComponent(DiagnosticsCollector.folderName, isDirectory: true)
+            try fm.createDirectory(at: folder, withIntermediateDirectories: true)
+            for url in payloads {
+                guard let text = try? String(contentsOf: url, encoding: .utf8) else { continue }
+                try writeMasked(text, to: folder.appendingPathComponent(url.lastPathComponent))
+            }
         }
 
         try zip(staging, to: destination)
+    }
+
+    /// 홈 폴더 경로를 `~`로 바꾼다. JSON은 `/`를 `\/`로 적으므로 그 형태도 바꾼다.
+    static func maskingHome(_ text: String, home: String = NSHomeDirectory()) -> String {
+        guard home.count > 1 else { return text }
+        let escaped = home.replacingOccurrences(of: "/", with: "\\/")
+        return text
+            .replacingOccurrences(of: home, with: "~")
+            .replacingOccurrences(of: escaped, with: "~")
+    }
+
+    private static func writeMasked(_ text: String, to url: URL) throws {
+        try maskingHome(text).write(to: url, atomically: true, encoding: .utf8)
     }
 
     /// 이번 실행 동안의 앱 로그. 다른 프로세스(익스텐션) 로그는 관리자 권한이 있어야 읽을 수 있어 넣지 않는다.
