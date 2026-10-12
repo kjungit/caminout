@@ -1,36 +1,46 @@
 # CamZoomExtension (카메라 익스텐션)
 
-이 폴더는 자리표시자입니다. Core Media I/O 카메라 익스텐션은 Xcode가 제공하는
-**"Camera Extension"** 템플릿의 보일러플레이트(스트림 소스/싱크 설정, provider,
-enumeration 코드 등)로 시작해야 합니다. 손으로 처음부터 작성하면 애플 문서와
-어긋나기 쉬우므로, 반드시 아래 순서로 Xcode에서 타깃을 생성한 뒤 이 폴더의
-파일들을 그 타깃 안으로 옮겨서 채워 넣으세요.
+Core Media I/O 카메라 익스텐션. 호스트 앱이 처리한 프레임을 받아 화상 앱에 일반
+카메라처럼 내보내기만 합니다 (기술 설계서 2·6장, ADR-02). 영상 처리 로직은 없고,
+**CamZoomShared 패키지 하나만 의존**합니다. 그래서 효과·자르기 코드를 고쳐도
+익스텐션을 다시 설치할 필요가 없습니다.
 
-## 타깃 만들기
+## 구성
 
-1. `CamZoom.xcodeproj`를 Xcode에서 엽니다 (프로젝트 자체는 아직 생성 전이면
-   `File > New > Project > macOS > App`으로 `CamZoom` 앱을 먼저 만드세요).
-2. `File > New > Target...` → **Camera Extension** 템플릿을 선택합니다.
-3. 타깃 이름을 `CamZoomExtension`으로 짓습니다.
-4. 번들 ID는 앱 번들 ID로 시작해야 합니다.
-   예: 앱 `com.example.camzoom` → 익스텐션 `com.example.camzoom.extension`
-   (기획서 9.2 식별자와 권한 참고).
-5. 생성된 타깃에 `CamZoomCore` 패키지를 의존성으로 추가합니다
-   (`Packages/CamZoomCore`를 로컬 패키지로 추가).
+| 파일 | 역할 |
+| --- | --- |
+| `main.swift` | 진입점. provider 서비스를 시작한다 |
+| `ExtensionProviderSource.swift` | 장치 하나를 등록한다 |
+| `ExtensionDeviceSource.swift` | 장치, sink → source 전달, 안내 화면, 사용자 정의 속성 |
+| `StreamSources.swift` | source 스트림(화상 앱이 읽음), sink 스트림(앱이 넣음) |
+| `Info.plist` | `CMIOExtensionMachServiceName` = 팀 접두어 + 번들 ID |
+| `CamZoomExtension.entitlements` | 샌드박스, App Group |
 
-## 채워 넣을 부분
+## 동작
 
-Xcode 템플릿이 만들어 주는 provider 코드 안에서, 카메라 프레임을 실제로
-처리하는 부분을 다음처럼 `CamZoomCore`로 연결합니다.
+- 장치 하나에 스트림 두 개: **source**(화상 앱용), **sink**(호스트 앱용).
+- 출력 형식은 1920×1080, 1280×720, 1080×1080을 30fps로 광고하고, 실제 형식은 화상 앱이 고릅니다.
+- source나 sink가 열려 있으면 30fps 타이머가 돕니다. 매 틱마다 sink에서 프레임을 꺼내고,
+  밀려 있으면 가장 최근 프레임만 source로 보냅니다(지연이 쌓이지 않게).
+- 1초 동안 sink에서 프레임이 오지 않으면 "앱을 실행해 주세요" 안내 화면을 보냅니다 (A5).
+- 앱은 아래 사용자 정의 장치 속성을 읽습니다 (`CamZoomShared.CustomProperty`).
 
-- 앱에서 넘어온 원본 프레임을 받는 지점 → `CamZoomCore.FrameProcessor.process(_:state:)` 호출
-- 현재 설정값(`CropState`) → App Group을 통해 앱과 공유 (기획서 9.2)
-- 호스트 앱이 꺼져 있을 때 → 안내 화면 이미지를 대신 내보냄 (기획서 10장 예외 상황 처리)
+| 속성 | 값 | 용도 |
+| --- | --- | --- |
+| `cact` | "1"/"0" | 화상 앱이 source를 쓰는 중인지 → 앱이 카메라를 켜고 끔 (G3) |
+| `cpvr` | "1" | 앱↔익스텐션 프로토콜 버전 → 다르면 앱이 교체 요청 (G5) |
+| `cafm` | "1920x1080" | 화상 앱이 고른 형식 → 앱이 합성 크기를 맞춤 |
+| `cbld` | 빌드 번호 | 진단용 |
 
-## 참고 문서
+## 바꿀 때 주의
 
-- [Apple: Creating a camera extension with Core Media I/O](https://developer.apple.com/documentation/coremediaio/creating-a-camera-extension-with-core-media-i-o.md)
+- 장치·스트림 ID(`CameraIdentity`)는 첫 출시 후 절대 바꾸지 않습니다 (G8). 화상 앱이 이 값으로 카메라를 기억합니다.
+- 속성의 의미나 sink 규칙을 바꾸면 `CameraIdentity.protocolVersion`을 올립니다.
+- 시스템 확장은 빌드 번호(CFBundleVersion)가 올라가야 교체됩니다. `scripts/install-dev.sh`가 매번 올립니다 (G16).
+- 로그 보기: `log stream --predicate 'subsystem == "com.kjungit.caminout.extension"'`
+
+## 참고
+
+- [Apple: Creating a camera extension with Core Media I/O](https://developer.apple.com/documentation/coremediaio/creating-a-camera-extension-with-core-media-i-o)
 - [Apple WWDC22: Create camera extensions with Core Media IO](https://developer.apple.com/videos/play/wwdc2022/10022/)
-
-세부 배경은 `docs/02-technical-design.md`의 4장(모듈 구조), 6장(앱↔익스텐션 통신), 10장(빌드·서명·배포)과 `docs/01-product-plan.md`의 9장(개발 환경과
-프로젝트 구조), 10장(예외 상황 처리)을 참고하세요.
+- [Apple 개발자 포럼: 앱에서 CMIO 익스텐션으로 프레임 보내기](https://developer.apple.com/forums/thread/706184?page=2)

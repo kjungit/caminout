@@ -59,3 +59,46 @@ final class CropMathTests: XCTestCase {
         XCTAssertEqual(rect, .zero)
     }
 }
+
+final class CropMathPlacementTests: XCTestCase {
+
+    func testSquareFitsInsideSixteenNineCentered() {
+        let rect = CropMath.placement(
+            content: CGSize(width: 1080, height: 1080),
+            output: CGSize(width: 1920, height: 1080),
+            mode: .fit
+        )
+        XCTAssertEqual(rect, CGRect(x: 420, y: 0, width: 1080, height: 1080))
+    }
+
+    func testSquareFillCoversSixteenNine() {
+        let rect = CropMath.placement(
+            content: CGSize(width: 1080, height: 1080),
+            output: CGSize(width: 1920, height: 1080),
+            mode: .fill
+        )
+        XCTAssertEqual(rect.width, 1920, accuracy: 0.01)
+        XCTAssertEqual(rect.height, 1920, accuracy: 0.01)
+        XCTAssertEqual(rect.midY, 540, accuracy: 0.01)
+    }
+
+    func testSameAspectFillsOutputExactly() {
+        let rect = CropMath.placement(
+            content: CGSize(width: 1280, height: 720),
+            output: CGSize(width: 1920, height: 1080),
+            mode: .fit
+        )
+        XCTAssertEqual(rect, CGRect(x: 0, y: 0, width: 1920, height: 1080))
+    }
+
+    func testOrientedSizeSwapsForQuarterTurns() {
+        let source = CGSize(width: 1920, height: 1080)
+        XCTAssertEqual(CropMath.orientedSize(source: source, rotation: .right), CGSize(width: 1080, height: 1920))
+        XCTAssertEqual(CropMath.orientedSize(source: source, rotation: .upsideDown), source)
+    }
+
+    func testRotationNextCyclesThroughAllValues() {
+        XCTAssertEqual(Rotation.none.next, .right)
+        XCTAssertEqual(Rotation.left.next, .none)
+    }
+}

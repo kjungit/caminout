@@ -1,0 +1,83 @@
+name: CamZoom
+options:
+  bundleIdPrefix: com.kjungit
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+configFiles:
+  Debug: Config/Base.xcconfig
+  Release: Config/Base.xcconfig
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: 0.1.0
+    CURRENT_PROJECT_VERSION: 1
+    ENABLE_HARDENED_RUNTIME: YES
+    CODE_SIGN_STYLE: Automatic
+    DEAD_CODE_STRIPPING: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
+packages:
+  CamZoomCore:
+    path: Packages/CamZoomCore
+  CamZoomShared:
+    path: Packages/CamZoomShared
+  EffectsKit:
+    path: Packages/EffectsKit
+  CaptureKit:
+    path: Packages/CaptureKit
+  CameraBridge:
+    path: Packages/CameraBridge
+targets:
+  CamZoom:
+    type: application
+    platform: macOS
+    sources:
+      - path: App/CamZoom
+        excludes:
+          - Info.plist
+          - CamZoom.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kjungit.caminout
+        PRODUCT_NAME: CamZoom
+        INFOPLIST_FILE: App/CamZoom/Info.plist
+        CODE_SIGN_ENTITLEMENTS: App/CamZoom/CamZoom.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        COMBINE_HIDPI_IMAGES: YES
+    dependencies:
+      - target: CamZoomExtension
+        embed: true
+      - package: CamZoomCore
+      - package: CamZoomShared
+      - package: EffectsKit
+      - package: CaptureKit
+      - package: CameraBridge
+  CamZoomExtension:
+    type: system-extension
+    platform: macOS
+    sources:
+      - path: Extension/CamZoomExtension
+        excludes:
+          - Info.plist
+          - CamZoomExtension.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kjungit.caminout.extension
+        PRODUCT_NAME: com.kjungit.caminout.extension
+        INFOPLIST_FILE: Extension/CamZoomExtension/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Extension/CamZoomExtension/CamZoomExtension.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+    dependencies:
+      - package: CamZoomShared
+schemes:
+  CamZoom:
+    build:
+      targets:
+        CamZoom: all
+    run:
+      config: Debug
+    archive:
+      config: Release

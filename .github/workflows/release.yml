@@ -1,0 +1,119 @@
+# v* 태그: 아카이브 → Developer ID 서명 → 공증 → 스테이플 → DMG → GitHub Release (기술 설계서 10.1).
+# 비밀값이 등록되기 전에는 서명 단계를 건너뛰고 실패로 끝낸다.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  release:
+    runs-on: macos-15
+    env:
+      HAS_SIGNING: ${{ secrets.DEVELOPER_ID_P12 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
+
+      - name: Check secrets
+        if: env.HAS_SIGNING != 'true'
+        run: |
+          echo "::error::서명 비밀값(DEVELOPER_ID_P12 등)이 없습니다. docs/release.md 를 참고해 등록하세요."
+          exit 1
+
+      - name: Check version matches tag
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          VERSION=$(grep -E '^\s+MARKETING_VERSION:' project.yml | head -1 | awk '{print $2}')
+          if [ "$TAG" != "$VERSION" ]; then
+            echo "::error::태그($TAG)와 MARKETING_VERSION($VERSION)이 다릅니다."
+            exit 1
+          fi
+
+      - name: Import signing certificate
+        env:
+          P12: ${{ secrets.DEVELOPER_ID_P12 }}
+          P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+          TEAM_ID: ${{ secrets.TEAM_ID }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/release.keychain-db"
+          security create-keychain -p "" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "" "$KEYCHAIN"
+          echo "$P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "$P12_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          echo "DEVELOPMENT_TEAM = $TEAM_ID" > Config/Signing.local.xcconfig
+
+      - name: Install provisioning profiles
+        env:
+          APP_PROFILE: ${{ secrets.APP_PROVISIONING_PROFILE }}
+          EXT_PROFILE: ${{ secrets.EXTENSION_PROVISIONING_PROFILE }}
+        run: |
+          DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$DIR"
+          echo "$APP_PROFILE" | base64 --decode > "$DIR/app.provisionprofile"
+          echo "$EXT_PROFILE" | base64 --decode > "$DIR/extension.provisionprofile"
+
+      - name: Archive and export
+        run: |
+          set -o pipefail
+          BUILD_NUMBER="$(date -u +%Y%m%d%H%M)"
+          xcodebuild archive \
+            -project CamZoom.xcodeproj -scheme CamZoom -configuration Release \
+            -archivePath build/CamZoom.xcarchive \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Developer ID Application" | tail -20
+          cat > build/ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>developer-id</string>
+            <key>teamID</key><string>${{ secrets.TEAM_ID }}</string>
+            <key>signingStyle</key><string>manual</string>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath build/CamZoom.xcarchive \
+            -exportOptionsPlist build/ExportOptions.plist -exportPath build/export
+
+      - name: Notarize app
+        env:
+          ASC_KEY: ${{ secrets.ASC_API_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_ISSUER: ${{ secrets.ASC_API_ISSUER_ID }}
+        run: |
+          echo "$ASC_KEY" > "$RUNNER_TEMP/asc.p8"
+          ditto -c -k --keepParent build/export/CamZoom.app build/CamZoom.zip
+          xcrun notarytool submit build/CamZoom.zip --key "$RUNNER_TEMP/asc.p8" --key-id "$ASC_KEY_ID" --issuer "$ASC_ISSUER" --wait
+          xcrun stapler staple build/export/CamZoom.app
+
+      - name: Build DMG
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_ISSUER: ${{ secrets.ASC_API_ISSUER_ID }}
+        run: |
+          mkdir -p build/dmg
+          cp -R build/export/CamZoom.app build/dmg/
+          ln -s /Applications build/dmg/Applications
+          hdiutil create -volname CamZoom -srcfolder build/dmg -ov -format UDZO "build/CamZoom-${GITHUB_REF_NAME}.dmg"
+          codesign --sign "Developer ID Application" "build/CamZoom-${GITHUB_REF_NAME}.dmg"
+          xcrun notarytool submit "build/CamZoom-${GITHUB_REF_NAME}.dmg" --key "$RUNNER_TEMP/asc.p8" --key-id "$ASC_KEY_ID" --issuer "$ASC_ISSUER" --wait
+          xcrun stapler staple "build/CamZoom-${GITHUB_REF_NAME}.dmg"
+
+      - name: Verify signature
+        run: |
+          codesign --verify --deep --strict --verbose=2 build/export/CamZoom.app
+          spctl --assess --type execute --verbose build/export/CamZoom.app
+          spctl --assess --type open --context context:primary-signature --verbose "build/CamZoom-${GITHUB_REF_NAME}.dmg"
+
+      # Sparkle 업데이트 피드(appcast.xml)는 Sparkle을 앱에 넣는 시점(웹사이트 준비 후)에 추가한다.
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" build/CamZoom-*.dmg \
+            --title "$GITHUB_REF_NAME" --generate-notes

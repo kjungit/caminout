@@ -27,3 +27,6 @@ build/
 
 # Distribution output
 *.dmg
+
+# Local signing settings (team ID)
+Config/Signing.local.xcconfig
